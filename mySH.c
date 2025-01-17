@@ -2,6 +2,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <string.h>
 
 void e(char *s) {
 	fprintf(stderr, "%s", s);
@@ -50,13 +51,29 @@ char *mysh_rdln(void) {
 #define MYSH_TOK_BUFSIZE 64
 #define MYSH_TOK_DELIM "  \t\r\n\a"
 char** mysh_parse(char* line) {
-	int bufsize = sizeof(char)*MYSH_TOK_BUFSIZE;
-	char *buf = (char *)malloc(bufsize);
-	if (!buf) e("mysh: allocation error");
+	int bufsize = sizeof(char*)*MYSH_TOK_BUFSIZE;
+	char **tokens = (char **)malloc(bufsize);
+	if (!tokens) e("mysh: allocation error");
+	char *token;
 
-	while(1) {
+	int argc = 0;
+	
+	token = strtok(line, MYSH_TOK_DELIM);
+	while(token != NULL) {
+		tokens[argc++] = token;
 
+		if (argc >= MYSH_TOK_BUFSIZE) {
+			bufsize += sizeof(char*)*MYSH_TOK_BUFSIZE;
+			tokens = (char **)realloc(tokens, bufsize);
+			if (!tokens) e("mysh: allocation error");
+		}
+		
+		// In the tutorial, they use NULL instead of line
+		// i dont know why, or if it is an oversight from the tutorial
+		token = strtok(line, MYSH_TOK_DELIM);
 	}
+
+	return tokens;
 }
 int mysh_execute(char **args);
 
