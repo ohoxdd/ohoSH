@@ -1,13 +1,12 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
-#include <errno.h>
 #include <string.h>
 #include <sys/wait.h>
 
 void e(char *s) {
-	fprintf(stderr, "%s", s);
-	exit(errno);
+	perror(s);
+	exit(EXIT_FAILURE);
 }
 
 int my_getchar() {
@@ -29,7 +28,8 @@ char *mysh_rdln(void) {
 	
 	int c;
 	while(1) {
-		c = my_getchar();
+		//c = my_getchar();
+		c = getchar();
 		if (c == EOF || c == '\n') {
 			buf[pos] = '\0';
 			return buf;
@@ -70,7 +70,7 @@ char** mysh_parse(char* line) {
 		
 		// In the tutorial, they use NULL instead of line
 		// i dont know why, or if it is an oversight from the tutorial
-		token = strtok(line, MYSH_TOK_DELIM);
+		token = strtok(NULL, MYSH_TOK_DELIM);
 	}
 
 	tokens[argc] = (char *)0; // last element is a char* nullptr
@@ -78,13 +78,13 @@ char** mysh_parse(char* line) {
 	return tokens;
 }
 
-int mysh_execute(char **args) {
+int mysh_launch(char **args) {
 	pid_t ret, wpid;
 	int status;
 
 	ret = fork();
 	if (ret < 0) e("fork error");
-	if (!ret) {
+	if (ret == 0) {
 		execvp(args[0], args);
 		e("execvp");
 	}
@@ -95,6 +95,75 @@ int mysh_execute(char **args) {
 
 
 	return 1;
+}
+
+int mysh_cd(char **args);
+int mysh_exit(char **args);
+int mysh_help(char **args);
+
+char *builtin_names[] = {
+	"cd", "exit", "help"
+};
+
+int (*builtin_func[]) (char**) = {
+	&mysh_cd,
+	&mysh_exit,
+	&mysh_help
+};
+
+int mysh_cd(char **args) {
+
+	char *dir;
+	
+	if (args[1] == NULL) {
+		dir = "$HOME";
+	} else {
+		dir = args[1];
+	}
+
+	if (chdir(dir) < 0) e("mysh: chdir");
+
+	return 1;
+}
+
+int mysh_num_builtin() {
+	return sizeof(builtin_names)/sizeof(char *);
+}
+
+int mysh_exit(char **args) {
+	return 0;
+}
+
+int mysh_help(char **args) {
+	printf("ohoxd's shell OHOSH\n");
+	printf("Type the name and arguments of the program, and hit enter.\n");
+	printf("The following commands are built-in:\n\n");
+
+	for (int i = 0; i < mysh_num_builtin(); ++i) {
+		printf("\t%s\n", builtin_names[i]);
+	}
+	printf("\n");
+
+	printf("RTFM for anything else.\n");
+	printf("Angel Quiñones' Framework will instantly explode if any command is executed.\n");
+
+	return 1;
+}
+
+int mysh_execute(char **args) {
+	
+	// We check if the command which is being executed 
+	// is a shell built-in command 
+	
+	char *command = args[0];
+
+	for (int i = 0; i < mysh_num_builtin(); i++) {
+		if (strcmp(command, builtin_names[i]) == 0) {
+			return (*builtin_func[i])(args);
+		}
+	}
+
+	return mysh_launch(args);
 }
 
 void mysh_loop() {
@@ -120,7 +189,6 @@ void mysh_loop() {
 
 int main(int argc, char **argv) {
 	// Load config files
-	
 
 	mysh_loop();
 
