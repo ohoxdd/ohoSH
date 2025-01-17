@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
+#include <sys/wait.h>
 
 void e(char *s) {
 	fprintf(stderr, "%s", s);
@@ -47,7 +48,6 @@ char *mysh_rdln(void) {
 	return NULL;
 }
 
-
 #define MYSH_TOK_BUFSIZE 64
 #define MYSH_TOK_DELIM "  \t\r\n\a"
 char** mysh_parse(char* line) {
@@ -73,9 +73,29 @@ char** mysh_parse(char* line) {
 		token = strtok(line, MYSH_TOK_DELIM);
 	}
 
+	tokens[argc] = (char *)0; // last element is a char* nullptr
+
 	return tokens;
 }
-int mysh_execute(char **args);
+
+int mysh_execute(char **args) {
+	pid_t ret, wpid;
+	int status;
+
+	ret = fork();
+	if (ret < 0) e("fork error");
+	if (!ret) {
+		execvp(args[0], args);
+		e("execvp");
+	}
+
+	do {
+		wpid = waitpid(ret, &status, WUNTRACED);
+	} while (!WIFEXITED(status) && !WIFSIGNALED(status));
+
+
+	return 1;
+}
 
 void mysh_loop() {
 	
@@ -95,7 +115,6 @@ void mysh_loop() {
 		free(args);
 
 	} while(status);
-
 
 }
 
