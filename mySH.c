@@ -13,18 +13,18 @@ int my_getchar() {
 	int c, ret;
 	int fd = STDIN_FILENO;
 	ret = read(fd, &c, sizeof(char));
-	if (ret < 0) e("mysh: rd getchar");
+	if (ret < 0) e("ohosh");
 	if (ret > 0) return c;
 	return EOF;
 }
 
 
 #define MYSH_RDLN_BUFSIZE 1024
-char *mysh_rdln(void) {
+char *ohosh_rdln(void) {
 	int pos = 0;
 	int bufsize = sizeof(char)*MYSH_RDLN_BUFSIZE; 
 	char *buf = (char *)malloc(bufsize);
-	if (!buf) e("mysh: allocation error"); // malloc returns null pointer
+	if (!buf) e("ohosh"); // malloc returns null pointer
 	
 	int c;
 	while(1) {
@@ -41,7 +41,7 @@ char *mysh_rdln(void) {
 		if (pos >= MYSH_RDLN_BUFSIZE) {
 			bufsize += sizeof(char)*MYSH_RDLN_BUFSIZE;
 			buf = (char*)realloc(buf, bufsize);
-			if (!buf) e("mysh: allocation error"); // malloc returns null pointer
+			if (!buf) e("ohosh"); // malloc returns null pointer
 		}
 	}
 
@@ -50,10 +50,10 @@ char *mysh_rdln(void) {
 
 #define MYSH_TOK_BUFSIZE 64
 #define MYSH_TOK_DELIM "  \t\r\n\a"
-char** mysh_parse(char* line) {
+char** ohosh_parse(char* line) {
 	int bufsize = sizeof(char*)*MYSH_TOK_BUFSIZE;
 	char **tokens = (char **)malloc(bufsize);
-	if (!tokens) e("mysh: allocation error");
+	if (!tokens) e("ohosh");
 	char *token;
 
 	int argc = 0;
@@ -65,7 +65,7 @@ char** mysh_parse(char* line) {
 		if (argc >= MYSH_TOK_BUFSIZE) {
 			bufsize += sizeof(char*)*MYSH_TOK_BUFSIZE;
 			tokens = (char **)realloc(tokens, bufsize);
-			if (!tokens) e("mysh: allocation error");
+				if (!tokens) e("ohosh");
 		}
 		
 		// In the tutorial, they use NULL instead of line
@@ -78,15 +78,15 @@ char** mysh_parse(char* line) {
 	return tokens;
 }
 
-int mysh_launch(char **args) {
+int ohosh_launch(char **args) {
 	pid_t ret, wpid;
 	int status;
 
 	ret = fork();
-	if (ret < 0) e("fork error");
+	if (ret < 0) e("ohosh");
 	if (ret == 0) {
 		execvp(args[0], args);
-		e("execvp");
+		e("ohosh");
 	}
 
 	do {
@@ -97,21 +97,21 @@ int mysh_launch(char **args) {
 	return 1;
 }
 
-int mysh_cd(char **args);
-int mysh_exit(char **args);
-int mysh_help(char **args);
+int ohosh_cd(char **args);
+int ohosh_exit(char **args);
+int ohosh_help(char **args);
 
 char *builtin_names[] = {
 	"cd", "exit", "help"
 };
 
 int (*builtin_func[]) (char**) = {
-	&mysh_cd,
-	&mysh_exit,
-	&mysh_help
+	&ohosh_cd,
+	&ohosh_exit,
+	&ohosh_help
 };
 
-int mysh_cd(char **args) {
+int ohosh_cd(char **args) {
 
 	char *dir;
 	
@@ -121,25 +121,25 @@ int mysh_cd(char **args) {
 		dir = args[1];
 	}
 
-	if (chdir(dir) < 0) e("mysh: chdir");
+	if (chdir(dir) < 0) e("ohosh");
 
 	return 1;
 }
 
-int mysh_num_builtin() {
+int ohosh_num_builtin() {
 	return sizeof(builtin_names)/sizeof(char *);
 }
 
-int mysh_exit(char **args) {
+int ohosh_exit(char **args) {
 	return 0;
 }
 
-int mysh_help(char **args) {
+int ohosh_help(char **args) {
 	printf("ohoxd's shell OHOSH\n");
 	printf("Type the name and arguments of the program, and hit enter.\n");
 	printf("The following commands are built-in:\n\n");
 
-	for (int i = 0; i < mysh_num_builtin(); ++i) {
+	for (int i = 0; i < ohosh_num_builtin(); ++i) {
 		printf("\t%s\n", builtin_names[i]);
 	}
 	printf("\n");
@@ -150,23 +150,23 @@ int mysh_help(char **args) {
 	return 1;
 }
 
-int mysh_execute(char **args) {
+int ohosh_execute(char **args) {
 	
 	// We check if the command which is being executed 
 	// is a shell built-in command 
 	
 	char *command = args[0];
 
-	for (int i = 0; i < mysh_num_builtin(); i++) {
+	for (int i = 0; i < ohosh_num_builtin(); i++) {
 		if (strcmp(command, builtin_names[i]) == 0) {
 			return (*builtin_func[i])(args);
 		}
 	}
 
-	return mysh_launch(args);
+	return ohosh_launch(args);
 }
 
-void mysh_loop() {
+void ohosh_loop() {
 	
 	char *line;
 	char **args;
@@ -176,9 +176,9 @@ void mysh_loop() {
 		
 		printf("~> ");
 
-		line = mysh_rdln();
-		args = mysh_parse(line);
-		status = mysh_execute(args);
+		line = ohosh_rdln();
+		args = ohosh_parse(line);
+		status = ohosh_execute(args);
 
 		free(line);
 		free(args);
@@ -190,7 +190,7 @@ void mysh_loop() {
 int main(int argc, char **argv) {
 	// Load config files
 
-	mysh_loop();
+	ohosh_loop();
 
 	// Cleanup
 	
